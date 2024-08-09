@@ -97,6 +97,6 @@ fn animated_unprint<T>(str: &str, sigint_rx: Receiver<T>) {
         print!("\r{slice} ");
         io::stdout().flush().unwrap();
 
-        thread::sleep(Duration::from_millis(27))
+        thread::sleep(Duration::from_millis(27));
     }
 }
