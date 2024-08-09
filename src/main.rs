@@ -16,30 +16,39 @@ fn main() {
         "Stop sign demolished! +70pts",
     ];
 
-    let (tx, rx) = std::sync::mpsc::channel::<&str>();
+    let (print_tx, print_rx) = std::sync::mpsc::channel::<&str>();
 
     thread::spawn(move || {
-        'outer: for msg in &rx {
-            animated_print(msg);
-            let start = std::time::Instant::now();
-            let (tx, rx) = std::sync::mpsc::channel::<bool>();
-            thread::sleep(Duration::from_millis(400));
-            animated_unprint(msg, rx);
-            // while start.elapsed() < Duration::from_millis(900) {
-            //     if let Ok(a) = rx.recv_timeout(Duration::from_millis(900)) {
-            //         print!("Found {a}\r");
-            //         continue 'outer;
-            //     }
-            // }
+        let mut print_rx_iter = print_rx.iter().peekable();
+        loop {
+            while let Some(msg) = print_rx_iter.next() {
+                animated_print(msg);
+
+                let start = std::time::Instant::now();
+
+                let (fade_tx, fade_rx) = std::sync::mpsc::channel::<bool>();
+                thread::sleep(Duration::from_millis(400));
+                thread::spawn(|| animated_unprint(msg, fade_rx));
+
+                while start.elapsed() < Duration::from_millis(900) {
+                    if print_rx_iter.peek().is_some() {
+                        let _ = fade_tx.send(true);
+                        break;
+                    }
+                }
+            }
         }
     });
 
     loop {
-        let print_this = phrases.choose(&mut rand::thread_rng()).unwrap();
-        tx.send(print_this).unwrap();
-
         if crossterm::event::poll(Duration::from_millis(30)).unwrap() {
             if let crossterm::event::Event::Key(key) = crossterm::event::read().unwrap() {
+                if key.kind == crossterm::event::KeyEventKind::Press
+                    && key.code == crossterm::event::KeyCode::Char('a')
+                {
+                    let phrase = phrases.choose(&mut rand::thread_rng()).unwrap();
+                    print_tx.send(phrase).unwrap();
+                }
                 if key.kind == crossterm::event::KeyEventKind::Press
                     && key.code == crossterm::event::KeyCode::Char('q')
                     || key.code == crossterm::event::KeyCode::Char('Q')
@@ -55,20 +64,28 @@ fn main() {
 }
 
 fn animated_print(str: &str) {
+    print!("\r");
     for char in str.chars() {
+        // print single character and display it
         print!("{char}");
         io::stdout().flush().unwrap();
+
         thread::sleep(Duration::from_millis(27))
     }
 }
 
-fn animated_unprint<T>(str: &str, rx: Receiver<T>) {
-    for i in (1..str.len()).rev() {
-        io::stdout().flush().unwrap();
+fn animated_unprint<T>(str: &str, sigint_rx: Receiver<T>) {
+    for i in (0..str.len()).rev() {
+        if sigint_rx.try_recv().is_ok() {
+            print!("\r{}\r", " ".repeat(str.len()));
+            io::stdout().flush().unwrap();
+            return;
+        }
+
         let slice = &str[..i];
         print!("\r{slice} ");
+        io::stdout().flush().unwrap();
+
         thread::sleep(Duration::from_millis(27))
     }
-
-    print!("\r \r"); // clear last character and place cursor at pos 0
 }
