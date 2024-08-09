@@ -12,8 +12,8 @@ fn main() {
     println!("[a]: Add a random message to queue. [q]: Quit.");
 
     let phrases = [
-        "Nice airtime! +200pts",
-        "MASSIVE DAMAGE! +1,000pts",
+        "Yard sign obliterated! +20pts",
+        "Mailbox flattened! +50pts",
         "Thirteen car pileup! +2,000pts",
         "Pedestrian eliminated! +50pts",
         "Stop sign demolished! +70pts",
@@ -38,7 +38,7 @@ fn main() {
                 let start = std::time::Instant::now();
 
                 let (fade_tx, fade_rx) = std::sync::mpsc::channel::<bool>();
-                thread::sleep(Duration::from_millis(400));
+                thread::sleep(Duration::from_millis(460));
                 thread::spawn(|| animated_unprint(msg, fade_rx));
 
                 while start.elapsed() < Duration::from_millis(900) {
@@ -83,7 +83,7 @@ fn animated_print(str: &str) {
         print!("{char}");
         io::stdout().flush().unwrap();
 
-        thread::sleep(Duration::from_millis(27));
+        thread::sleep(Duration::from_millis(15));
     }
 }
 
@@ -101,6 +101,6 @@ fn animated_unprint<T>(str: &str, sigint_rx: Receiver<T>) {
         print!("\r{slice} ");
         io::stdout().flush().unwrap();
 
-        thread::sleep(Duration::from_millis(27));
+        thread::sleep(Duration::from_millis(15));
     }
 }
