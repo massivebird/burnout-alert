@@ -1,3 +1,5 @@
+use rand::seq::SliceRandom;
+
 fn main() {
     let phrases = vec![
         "Nice airtime! +200pts",
@@ -5,7 +7,5 @@ fn main() {
         "Utter destruction! +300pts",
     ];
 
-    let rng = rand::thread_rng();
-
-    println!("Hello, world!");
+    println!("{}", phrases.choose(&mut rand::thread_rng()).unwrap());
 }
