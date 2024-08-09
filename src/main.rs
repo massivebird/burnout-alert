@@ -1,3 +1,4 @@
+use crossterm::event::{self, Event};
 use rand::seq::SliceRandom;
 use std::io::{self, Write};
 use std::sync::mpsc::Receiver;
@@ -47,17 +48,14 @@ fn main() {
     });
 
     loop {
-        if crossterm::event::poll(Duration::from_millis(30)).unwrap() {
-            if let crossterm::event::Event::Key(key) = crossterm::event::read().unwrap() {
-                if key.kind == crossterm::event::KeyEventKind::Press
-                    && key.code == crossterm::event::KeyCode::Char('a')
-                {
+        if event::poll(Duration::from_millis(30)).unwrap() {
+            if let event::Event::Key(key) = event::read().unwrap() {
+                if key.kind == event::KeyEventKind::Press && key.code == event::KeyCode::Char('a') {
                     let phrase = phrases.choose(&mut rand::thread_rng()).unwrap();
                     print_tx.send(phrase).unwrap();
                 }
-                if key.kind == crossterm::event::KeyEventKind::Press
-                    && key.code == crossterm::event::KeyCode::Char('q')
-                    || key.code == crossterm::event::KeyCode::Char('Q')
+                if key.kind == event::KeyEventKind::Press && key.code == event::KeyCode::Char('q')
+                    || key.code == event::KeyCode::Char('Q')
                 {
                     break;
                 }
@@ -94,6 +92,8 @@ fn animated_unprint<T>(str: &str, sigint_rx: Receiver<T>) {
         }
 
         let slice = &str[..i];
+        // Repeatedly replaces the last character with a space.
+        // This eventually "erases" the entire message.
         print!("\r{slice} ");
         io::stdout().flush().unwrap();
 
