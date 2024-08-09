@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event};
+use crossterm::event;
 use rand::seq::SliceRandom;
 use std::io::{self, Write};
 use std::sync::mpsc::Receiver;
