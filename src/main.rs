@@ -8,18 +8,24 @@ fn main() {
     crossterm::terminal::enable_raw_mode().unwrap();
     crossterm::execute!(std::io::stdout(), crossterm::cursor::Hide).unwrap();
 
-    let phrases = vec![
+    println!("[a]: Add message to queue. [q]: Quit.");
+
+    let phrases = [
         "Nice airtime! +200pts",
-        "BIG DAMAGE! +1,000pts",
+        "MASSIVE DAMAGE! +1,000pts",
         "Utter destruction! +300pts",
         "Pedestrian eliminated! +50pts",
         "Stop sign demolished! +70pts",
+        "Bicyclist hospitalized! +600pts",
     ];
 
     let (print_tx, print_rx) = std::sync::mpsc::channel::<&str>();
 
+    // Creates a printer manager thread.
+    // This is in charge of the cancel mechanics
     thread::spawn(move || {
         let mut print_rx_iter = print_rx.iter().peekable();
+
         loop {
             while let Some(msg) = print_rx_iter.next() {
                 animated_print(msg);
@@ -65,12 +71,17 @@ fn main() {
 
 fn animated_print(str: &str) {
     print!("\r");
+    io::stdout().flush().unwrap();
+    // '\r' doesn't always reset the cursor properly, I guess.
+    // position() resets it reliably!
+    crossterm::cursor::position().unwrap();
+
     for char in str.chars() {
         // print single character and display it
         print!("{char}");
         io::stdout().flush().unwrap();
 
-        thread::sleep(Duration::from_millis(27))
+        thread::sleep(Duration::from_millis(27));
     }
 }
 
