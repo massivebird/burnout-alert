@@ -9,14 +9,18 @@ fn main() {
     crossterm::terminal::enable_raw_mode().unwrap();
     crossterm::execute!(std::io::stdout(), crossterm::cursor::Hide).unwrap();
 
-    println!("[a]: Add message to queue. [q]: Quit.");
+    println!("[a]: Add a random message to queue. [q]: Quit.");
 
     let phrases = [
         "Nice airtime! +200pts",
         "MASSIVE DAMAGE! +1,000pts",
-        "Utter destruction! +300pts",
+        "Thirteen car pileup! +2,000pts",
         "Pedestrian eliminated! +50pts",
         "Stop sign demolished! +70pts",
+        "MILLIONS DEAD! +10,000pts",
+        "HUNDREDS INJURED! +5,000pts",
+        "White-owned business destroyed! +700pts",
+        "T-boned a school bus! +800pts",
         "Bicyclist hospitalized! +600pts",
     ];
 
