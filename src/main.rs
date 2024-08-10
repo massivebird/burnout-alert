@@ -11,7 +11,7 @@ fn main() {
 
     println!("[a]: Add a random message to queue. [q]: Quit.");
 
-    let phrases = [
+    let alerts = [
         "Yard sign obliterated! +20pts",
         "Mailbox flattened! +50pts",
         "Thirteen car pileup! +2,000pts",
@@ -65,8 +65,8 @@ fn main() {
         if event::poll(Duration::from_millis(30)).unwrap() {
             if let event::Event::Key(key) = event::read().unwrap() {
                 if key.kind == event::KeyEventKind::Press && key.code == event::KeyCode::Char('a') {
-                    let phrase = phrases.choose(&mut rand::thread_rng()).unwrap();
-                    print_tx.send(phrase).unwrap();
+                    let alert = alerts.choose(&mut rand::thread_rng()).unwrap();
+                    print_tx.send(alert).unwrap();
                 }
                 if key.kind == event::KeyEventKind::Press && key.code == event::KeyCode::Char('q')
                     || key.code == event::KeyCode::Char('Q')
