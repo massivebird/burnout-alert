@@ -29,21 +29,29 @@ fn main() {
     // Creates a printer manager thread.
     // This is in charge of the cancel mechanics
     thread::spawn(move || {
+        // A `for` loop makes peeking difficult.
+        // We'll use a `while` loop instead, taking ownership of each item
+        // individually rather than the entire iterator.
         let mut print_rx_iter = print_rx.iter().peekable();
 
         loop {
             while let Some(msg) = print_rx_iter.next() {
                 animated_print(msg);
 
-                let start = std::time::Instant::now();
-
+                // Transmitter/receiver for optionally cancelling the
+                // fade out animation.
                 let (fade_tx, fade_rx) = std::sync::mpsc::channel::<bool>();
-                thread::sleep(Duration::from_millis(460));
-                thread::spawn(|| animated_unprint(msg, fade_rx));
 
-                while start.elapsed() < Duration::from_millis(900) {
+                // Linger on the completed message before fading out.
+                thread::sleep(Duration::from_millis(460));
+
+                let fade_out = thread::spawn(|| animated_unprint(msg, fade_rx));
+
+                while !fade_out.is_finished() {
+                    // If there is a message in the queue, cancel the current
+                    // fade out animation.
                     if print_rx_iter.peek().is_some() {
-                        let _ = fade_tx.send(true);
+                        let _ = fade_tx.send(true); // eat the Result
                         break;
                     }
                 }
