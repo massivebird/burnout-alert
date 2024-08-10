@@ -43,7 +43,7 @@ fn main() {
                 let (fade_tx, fade_rx) = std::sync::mpsc::channel::<bool>();
 
                 // Linger on the completed message before fading out.
-                thread::sleep(Duration::from_millis(460));
+                thread::sleep(Duration::from_millis(560));
 
                 let fade_out = thread::spawn(|| animated_unprint(msg, fade_rx));
 
