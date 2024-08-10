@@ -95,8 +95,11 @@ fn animated_print(str: &str) {
     }
 }
 
+// Repeatedly replaces the last character with a space, "erasing"
+// the entire message.
 fn animated_unprint<T>(str: &str, sigint_rx: Receiver<T>) {
     for i in (0..str.len()).rev() {
+        // Cancel the [remaining] animation if the receiver detects a signal.
         if sigint_rx.try_recv().is_ok() {
             print!("\r{}\r", " ".repeat(str.len()));
             io::stdout().flush().unwrap();
@@ -104,8 +107,6 @@ fn animated_unprint<T>(str: &str, sigint_rx: Receiver<T>) {
         }
 
         let slice = &str[..i];
-        // Repeatedly replaces the last character with a space.
-        // This eventually "erases" the entire message.
         print!("\r{slice} ");
         io::stdout().flush().unwrap();
 
