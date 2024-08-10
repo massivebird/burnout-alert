@@ -5,26 +5,68 @@ use std::sync::mpsc::Receiver;
 use std::thread;
 use std::time::Duration;
 
+#[derive(Copy, Clone)]
+struct Alert<'a> {
+    msg: &'a str,
+    points: u32,
+}
+
+impl std::fmt::Display for Alert<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{} +{}pts", self.msg, self.points)
+    }
+}
+
 fn main() {
     crossterm::terminal::enable_raw_mode().unwrap();
     crossterm::execute!(std::io::stdout(), crossterm::cursor::Hide).unwrap();
 
     println!("[a]: Add a random message to queue. [q]: Quit.");
 
-    let phrases = [
-        "Yard sign obliterated! +20pts",
-        "Mailbox flattened! +50pts",
-        "Thirteen car pileup! +2,000pts",
-        "Pedestrian eliminated! +50pts",
-        "Stop sign demolished! +70pts",
-        "MILLIONS DEAD! +10,000pts",
-        "HUNDREDS INJURED! +5,000pts",
-        "White-owned business destroyed! +700pts",
-        "T-boned a school bus! +800pts",
-        "Bicyclist hospitalized! +600pts",
+    let alerts = [
+        Alert {
+            msg: "Yard sign obliterated!",
+            points: 20,
+        },
+        Alert {
+            msg: "Mailbox flattened!",
+            points: 50,
+        },
+        Alert {
+            msg: "Thirteen car pileup!",
+            points: 2000,
+        },
+        Alert {
+            msg: "Pedestrian eliminated!",
+            points: 50,
+        },
+        Alert {
+            msg: "Stop sign demolished!",
+            points: 70,
+        },
+        Alert {
+            msg: "MILLIONS DEAD!",
+            points: 10000,
+        },
+        Alert {
+            msg: "HUNDREDS INJURED!",
+            points: 5000,
+        },
+        Alert {
+            msg: "White-owned business destroyed!",
+            points: 700,
+        },
+        Alert {
+            msg: "T-boned a school bus!",
+            points: 800,
+        },
+        Alert {
+            msg: "Bicyclist hospitalized!",
+            points: 600,
+        },
     ];
 
-    let (print_tx, print_rx) = std::sync::mpsc::channel::<&str>();
+    let (print_tx, print_rx) = std::sync::mpsc::channel::<Alert>();
 
     // Creates a printer manager thread.
     // This is in charge of the cancel mechanics
@@ -35,8 +77,8 @@ fn main() {
         let mut print_rx_iter = print_rx.iter().peekable();
 
         loop {
-            while let Some(msg) = print_rx_iter.next() {
-                animated_print(msg);
+            while let Some(alert) = print_rx_iter.next() {
+                animated_print(&alert);
 
                 // Transmitter/receiver for optionally cancelling the
                 // fade out animation.
@@ -45,7 +87,7 @@ fn main() {
                 // Linger on the completed message before fading out.
                 thread::sleep(Duration::from_millis(460));
 
-                let fade_out = thread::spawn(|| animated_unprint(msg, fade_rx));
+                let fade_out = thread::spawn(move || animated_unprint(alert, fade_rx));
 
                 while !fade_out.is_finished() {
                     // If there is a message in the queue, cancel the current
@@ -59,12 +101,15 @@ fn main() {
         }
     });
 
+    let mut allocated_points = 0;
+
     loop {
         if event::poll(Duration::from_millis(30)).unwrap() {
             if let event::Event::Key(key) = event::read().unwrap() {
                 if key.kind == event::KeyEventKind::Press && key.code == event::KeyCode::Char('a') {
-                    let phrase = phrases.choose(&mut rand::thread_rng()).unwrap();
-                    print_tx.send(phrase).unwrap();
+                    let alert = alerts.choose(&mut rand::thread_rng()).unwrap();
+                    allocated_points += alert.points;
+                    print_tx.send(*alert).unwrap();
                 }
                 if key.kind == event::KeyEventKind::Press && key.code == event::KeyCode::Char('q')
                     || key.code == event::KeyCode::Char('Q')
@@ -75,18 +120,20 @@ fn main() {
         }
     }
 
+    println!("You earned a total of {allocated_points} points!");
+
     crossterm::execute!(std::io::stdout(), crossterm::cursor::Show).unwrap();
     crossterm::terminal::disable_raw_mode().unwrap();
 }
 
-fn animated_print(str: &str) {
+fn animated_print(alert: &Alert) {
     print!("\r");
     io::stdout().flush().unwrap();
     // '\r' doesn't always reset the cursor properly, I guess.
     // position() resets it reliably!
     crossterm::cursor::position().unwrap();
 
-    for char in str.chars() {
+    for char in alert.to_string().chars() {
         // print single character and display it
         print!("{char}");
         io::stdout().flush().unwrap();
@@ -97,16 +144,16 @@ fn animated_print(str: &str) {
 
 // Repeatedly replaces the last character with a space, "erasing"
 // the entire message.
-fn animated_unprint<T>(str: &str, sigint_rx: Receiver<T>) {
-    for i in (0..str.len()).rev() {
+fn animated_unprint<T>(alert: Alert, sigint_rx: Receiver<T>) {
+    for i in (0..alert.to_string().len()).rev() {
         // Cancel the [remaining] animation if the receiver detects a signal.
         if sigint_rx.try_recv().is_ok() {
-            print!("\r{}\r", " ".repeat(str.len()));
+            print!("\r{}\r", " ".repeat(alert.to_string().len()));
             io::stdout().flush().unwrap();
             return;
         }
 
-        let slice = &str[..i];
+        let slice = &alert.to_string()[..i];
         print!("\r{slice} ");
         io::stdout().flush().unwrap();
 
