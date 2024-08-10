@@ -19,6 +19,8 @@ fn main() {
         "Stop sign demolished! +70pts",
         "MILLIONS DEAD! +10,000pts",
         "HUNDREDS INJURED! +5,000pts",
+        "Skateboarder injured! +400pts",
+        "Speed limit ignored! +10pts",
         "White-owned business destroyed! +700pts",
         "T-boned a school bus! +800pts",
         "Bicyclist hospitalized! +600pts",
