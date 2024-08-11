@@ -64,14 +64,19 @@ fn main() {
     loop {
         if event::poll(Duration::from_millis(30)).unwrap() {
             if let event::Event::Key(key) = event::read().unwrap() {
-                if key.kind == event::KeyEventKind::Press && key.code == event::KeyCode::Char('a') {
-                    let alert = alerts.choose(&mut rand::thread_rng()).unwrap();
-                    print_tx.send(alert).unwrap();
+                if key.kind != event::KeyEventKind::Press {
+                    continue;
                 }
-                if key.kind == event::KeyEventKind::Press && key.code == event::KeyCode::Char('q')
-                    || key.code == event::KeyCode::Char('Q')
-                {
-                    break;
+
+                match key.code {
+                    event::KeyCode::Char('a') => {
+                        let alert = alerts.choose(&mut rand::thread_rng()).unwrap();
+                        print_tx.send(alert).unwrap();
+                    }
+                    event::KeyCode::Char('q' | 'Q') => {
+                        break;
+                    }
+                    _ => continue,
                 }
             }
         }
