@@ -76,7 +76,7 @@ fn main() {
                     event::KeyCode::Char('q' | 'Q') => {
                         break;
                     }
-                    _ => continue,
+                    _ => (),
                 }
             }
         }
